@@ -64,23 +64,6 @@ class AdapterBase(nn.Module, ABC):
     @abstractmethod
     def decode(self, x: Tensor) -> Tensor:
         pass
-
-class LadderDAE:
-    "Hierarchical Diffusion Auto Encoder"
-    
-    def __init__(self, DAEs: Sequence[DiffusionAE]):
-        self.DAEs = DAEs
-        
-    def forward(self, x: Tensor) -> Sequence[Tensor]:
-        z = [x]
-        loss = []
-        for DAE in self.DAEs[:-1]:
-            z.append(DAE.encode(z[-1]))
-            
-        for z, DAE in reversed(zip(z, self.DAEs)):
-            loss.append(DAE(z))
-            
-        return loss
             
       
 class DiffusionAE(DiffusionModel):
@@ -146,7 +129,24 @@ class DiffusionAE(DiffusionModel):
         # Decode output with adapter if provided
         return self.adapter.decode(out) if exists(self.adapter) else out
 
+class LadderDAE:
+    "Hierarchical Diffusion Auto Encoder"
+    
+    def __init__(self, DAEs: Sequence[DiffusionAE]):
+        self.DAEs = DAEs
+        
+    def forward(self, x: Tensor) -> Sequence[Tensor]:
+        z = [x]
+        loss = []
+        for DAE in self.DAEs[:-1]:
+            z.append(DAE.encode(z[-1]))
+            
+        for z, DAE in zip(z[::-1], self.DAEs[::-1]):
+            loss.append(DAE(z))
+            
+        return loss
 
+        
 class DiffusionUpsampler(DiffusionModel):
     def __init__(
         self,
