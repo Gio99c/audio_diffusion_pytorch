@@ -133,6 +133,7 @@ class LadderDAE(nn.Module):
     "Hierarchical Diffusion Auto Encoder"
     
     def __init__(self, DAEs: Sequence[DiffusionAE]):
+        super().__init__()
         self.DAEs = DAEs
         
     def forward(self, x: Tensor) -> Sequence[Tensor]:
