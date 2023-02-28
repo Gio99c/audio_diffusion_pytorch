@@ -145,7 +145,7 @@ class FIRFilter(torch.nn.Module):
         )
         return input, target
 
-def perceptual_loss(input, target, fs=48e3, reduction='mean'):
+def perceptual_loss(input, target, fs=750, reduction='mean'):
     fir_filter = FIRFilter(fs=fs, filter_type="aw")
     input_p, target_p = fir_filter(input, target)
 
