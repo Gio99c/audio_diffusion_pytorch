@@ -9,9 +9,6 @@ from einops import rearrange, repeat
 from torch import Tensor
 from tqdm import tqdm
 
-import auraloss
-from auraloss.perceptual import FIRFilter
-
 """ Distributions """
 
 
