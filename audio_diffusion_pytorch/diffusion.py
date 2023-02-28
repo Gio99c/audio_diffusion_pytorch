@@ -56,6 +56,19 @@ def extend_dim(x: Tensor, dim: int):
     # e.g. if dim = 4: shape [b] => [b, 1, 1, 1],
     return x.view(*x.shape + (1,) * (dim - x.ndim))
 
+def perceptual_loss(input, target, fs=48e3, reduction='mean'):
+    fir_filter = auraloss.perceptual.FIRFilter(fs=fs, filter_type="aw")
+    input_p, target_p = fir_filter(input, target)
+
+    loss_esr = (torch.sum(torch.pow(torch.abs(input_p - target_p), 2), dim=-1)) / torch.sum(torch.pow(torch.abs(target_p), 2), dim=-1)
+    loss_dc = torch.pow(torch.abs(torch.mean(input - target, dim=-1)), 2) / torch.mean(torch.pow(torch.abs(target), 2), dim=-1)
+    loss = loss_esr + loss_dc
+
+    if reduction == 'none':
+        return loss
+    else: 
+        return torch.mean(loss)
+
 
 class Diffusion(nn.Module):
     """Interface used by different diffusion methods"""
@@ -65,7 +78,7 @@ class Diffusion(nn.Module):
 
 class VDiffusion(Diffusion):
     def __init__(
-        self, net: nn.Module, sigma_distribution: Distribution = UniformDistribution()
+        self, net: nn.Module, sigma_distribution: Distribution = UniformDistribution(), loss='perceptual'
     ):
         super().__init__()
         self.net = net
@@ -89,7 +102,10 @@ class VDiffusion(Diffusion):
         v_target = alphas * noise - betas * x
         # Predict velocity and return loss
         v_pred = self.net(x_noisy, sigmas, **kwargs)
-        return F.mse_loss(v_pred, v_target)
+        if loss == 'mse':
+            return F.mse_loss(v_pred, v_target)
+        else:
+            return perceptual_loss(v_pred, v_target)
 
 
 class ARVDiffusion(Diffusion):
