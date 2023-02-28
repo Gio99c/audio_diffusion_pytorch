@@ -84,6 +84,7 @@ class VDiffusion(Diffusion):
         self, net: nn.Module, sigma_distribution: Distribution = UniformDistribution(), loss='perceptual'
     ):
         super().__init__()
+        self.loss = loss
         self.net = net
         self.sigma_distribution = sigma_distribution
 
@@ -105,10 +106,11 @@ class VDiffusion(Diffusion):
         v_target = alphas * noise - betas * x
         # Predict velocity and return loss
         v_pred = self.net(x_noisy, sigmas, **kwargs)
-        if loss == 'mse':
+        if self.loss == 'mse':
             return F.mse_loss(v_pred, v_target)
         else:
-            return perceptual_loss(v_pred, v_target)
+            batch_size = v_pred.shape[0]
+            return perceptual_loss(v_pred.reshape(batch_size, 1, -1), v_target.reshape(batch_size, 1, -1))
 
 
 class ARVDiffusion(Diffusion):
