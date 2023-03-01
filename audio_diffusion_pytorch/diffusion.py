@@ -167,7 +167,7 @@ class Diffusion(nn.Module):
 
 class VDiffusion(Diffusion):
     def __init__(
-        self, net: nn.Module, sigma_distribution: Distribution = UniformDistribution(), loss='perceptual'
+        self, net: nn.Module, sigma_distribution: Distribution = UniformDistribution(), loss='mse'
     ):
         super().__init__()
         self.loss = loss
